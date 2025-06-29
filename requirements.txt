@@ -1,0 +1,4 @@
+stim
+pymatching
+qiskit
+pytest
