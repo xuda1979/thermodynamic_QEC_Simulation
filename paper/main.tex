@@ -1,0 +1,70 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\title{Thermodynamic Analysis of Surface Codes for Fault-Tolerant Quantum Computing}
+\author{Jules (AI Assistant)}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We present a framework for simulating quantum error correction (QEC) with an integrated thermodynamic accounting model. We analyze the surface code under depolarizing noise and estimate the energy cost associated with the quantum circuit operations. Our results demonstrate the trade-off between logical error suppression and energy consumption as the code distance increases.
+\end{abstract}
+
+\section{Introduction}
+Fault-tolerant quantum computing (FTQC) is essential for realizing the full potential of quantum algorithms. However, the overhead required for QEC---in terms of qubits, gates, and classical processing---is significant. While much research focuses on the logical error rates and thresholds, the thermodynamic cost of these operations is often overlooked. In this work, we introduce a simulation tool that tracks the energy consumption of QEC cycles.
+
+\section{Methods}
+\subsection{Surface Code Simulation}
+We utilize the rotated surface code, a leading candidate for FTQC due to its high threshold and planar connectivity. The code is defined by a distance $d$, which determines the number of data and ancilla qubits. The code protects against bit-flip ($X$) and phase-flip ($Z$) errors.
+
+We use the \texttt{Stim} library for efficient Clifford circuit simulation. The noise model includes:
+\begin{itemize}
+    \item Depolarizing noise after Clifford gates.
+    \item Flip probabilities after reset and before measurement.
+\end{itemize}
+
+\subsection{Decoder}
+For syndrome decoding, we employ Minimum Weight Perfect Matching (MWPM) using the \texttt{PyMatching} library. The decoder processes the detection events (syndrome changes) to predict the most likely error configuration.
+
+\subsection{Energy Model}
+We define a simplified energy model where each operation is assigned a cost:
+\begin{itemize}
+    \item Single-qubit gate: 1.0 unit
+    \item Two-qubit gate: 2.0 units
+    \item Measurement: 5.0 units
+    \item Reset: 3.0 units
+\end{itemize}
+The total energy for a logical qubit operation is calculated by summing the costs of all physical operations in the circuit.
+
+\section{Results}
+We performed simulations for code distances $d \in \{3, 5, 7\}$ over a range of physical error rates $p \in [10^{-3}, 10^{-1}]$.
+
+\subsection{Logical Error Rates}
+Figure \ref{fig:threshold} shows the logical error rate as a function of the physical error rate. We observe the characteristic threshold behavior, where increasing the code distance suppresses the logical error rate for $p$ below a certain threshold.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{threshold_plot.png}
+    \caption{Logical error rate vs. physical error rate for different code distances.}
+    \label{fig:threshold}
+\end{figure}
+
+\subsection{Energy Consumption}
+Figure \ref{fig:energy} illustrates the energy cost per shot as a function of the code distance. As expected, the energy consumption scales with the number of qubits and operations, which grows quadratically with $d$.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{energy_plot.png}
+    \caption{Energy consumption per shot vs. code distance.}
+    \label{fig:energy}
+\end{figure}
+
+\section{Conclusion}
+We have developed a thermodynamic QEC simulation framework. Our initial results quantify the energy scaling of surface codes. Future work will include the energy cost of the classical decoding process and explore more realistic hardware-specific energy models.
+
+\end{document}
