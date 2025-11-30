@@ -20,7 +20,7 @@
 \maketitle
 
 \begin{abstract}
-As quantum computing technologies mature, the energy consumption of fault-tolerant protocols becomes a critical constraint. This paper presents a novel simulation framework that integrates thermodynamic accounting with quantum error correction (QEC) simulations. We analyze the rotated surface code under a depolarizing noise model, estimating the energy cost associated with quantum circuit operations for distances $d \in \{3, 5, 7\}$. Our results demonstrate a clear trade-off: while increasing code distance exponentially suppresses logical errors below the threshold (observed around $p \approx 0.01$), the energy consumption per shot scales quadratically with $d$. Specifically, we report an energy increase from 440 units for $d=3$ to 5816 units for $d=7$ per logical operation. This work underscores the importance of energy-aware QEC design for sustainable large-scale quantum computing.
+As quantum computing technologies mature, the energy consumption of fault-tolerant protocols becomes a critical constraint. This paper presents a novel simulation framework that integrates thermodynamic accounting with quantum error correction (QEC) simulations. We analyze the rotated surface code under a depolarizing noise model, estimating the energy cost associated with quantum circuit operations and classical decoding overhead for distances $d \in \{3, 5, 7\}$. Our results demonstrate a clear trade-off: while increasing code distance exponentially suppresses logical errors below the threshold (observed around $p \approx 0.01$), the energy consumption per shot scales quadratically with $d$ and increases with error rate due to decoding complexity. This work underscores the importance of energy-aware QEC design for sustainable large-scale quantum computing.
 \end{abstract}
 
 \section{Introduction}
@@ -50,11 +50,11 @@ We assume a standard circuit-level depolarizing noise model parameterized by the
 \end{itemize}
 
 \subsection{Thermodynamic Accounting Model}
-To quantify the energy cost, we assign a dimensionless energy cost $E_{op}$ to each fundamental operation type. While these values are illustrative, they reflect relative hardware costs (e.g., measurements and resets are typically slower and more energy-intensive than simple gates).
+To quantify the energy cost, we assign a dimensionless energy cost $E_{op}$ to each fundamental operation type. While these values are illustrative, they reflect relative hardware costs (e.g., measurements and resets are typically slower and more energy-intensive than simple gates). We also introduce a cost for the classical processing required to decode the syndrome, which we model as proportional to the number of detection events (defects).
 
 \begin{table}[h]
     \centering
-    \caption{Assumed energy costs for physical operations.}
+    \caption{Assumed energy costs for physical operations and classical processing.}
     \label{tab:energy_costs}
     \begin{tabular}{lc}
         \toprule
@@ -64,15 +64,16 @@ To quantify the energy cost, we assign a dimensionless energy cost $E_{op}$ to e
         Two-qubit Gate (CNOT) & 2.0 \\
         Measurement (M) & 5.0 \\
         Reset (R) & 3.0 \\
+        Decoding Event Processing (per defect) & 20.0 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-The total energy $E_{total}$ for a simulation shot is the sum of costs for all operations in the circuit:
+The total energy $E_{total}$ for a simulation shot is the sum of circuit operation costs and the decoding cost:
 \begin{equation}
-    E_{total} = \sum_{i} N_i \cdot E_{op, i}
+    E_{total} = \sum_{i} N_i \cdot E_{op, i} + N_{defects} \cdot E_{decoding}
 \end{equation}
-where $N_i$ is the count of operation type $i$.
+where $N_i$ is the count of operation type $i$, $N_{defects}$ is the number of detection events in the shot, and $E_{decoding}$ is the cost per defect.
 
 \section{Results}
 We performed Monte Carlo simulations for code distances $d \in \{3, 5, 7\}$ sweeping the physical error rate $p$ from $10^{-3}$ to $10^{-1}$. Each point represents 10,000 shots.
@@ -88,28 +89,20 @@ Figure \ref{fig:threshold} displays the logical error rate $P_L$ as a function o
 \end{figure}
 
 \subsection{Energy Consumption Scaling}
-Figure \ref{fig:energy} shows the average energy consumption per shot. The energy cost is independent of the error rate in this model (as we track circuit operations, not correction operations). However, it scales strongly with distance.
+Figure \ref{fig:energy} shows the average energy consumption per shot as a function of the physical error rate. The energy cost includes both a static component (circuit operations) and a dynamic component (decoding effort). As expected, the energy scales strongly with distance $d$. Furthermore, as the physical error rate $p$ increases, the number of defects rises, leading to a visible increase in the decoding energy required.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{energy_plot.png}
-    \caption{Total energy consumption per shot vs. code distance $d$. The scaling is approximately quadratic, reflecting the increase in qubit count and stabilizer measurements.}
+    \caption{Total energy consumption per shot vs. physical error rate $p$ for code distances $d=3, 5, 7$. The baseline energy is determined by the circuit depth and size (scaling $\sim O(d^2)$), while the increase with $p$ reflects the additional classical processing cost for decoding syndrome defects.}
     \label{fig:energy}
 \end{figure}
 
-Quantitatively, the costs are:
-\begin{itemize}
-    \item $d=3$: $\approx 440$ units
-    \item $d=5$: $\approx 2104$ units
-    \item $d=7$: $\approx 5816$ units
-\end{itemize}
-
-This quadratic scaling $O(d^2)$ poses a challenge: to achieve exponential error suppression, we must pay a polynomial energy cost.
+This result highlights that operating below the threshold is not only beneficial for accuracy but also for energy efficiency in the classical control layer, as fewer errors mean less decoding work.
 
 \section{Conclusion and Future Work}
-We have demonstrated a framework for co-simulating QEC performance and energy consumption. Our results highlight the steep energy penalty associated with increasing code distance. Future work will refine the energy model to include:
+We have demonstrated a framework for co-simulating QEC performance and energy consumption. Our results highlight the steep energy penalty associated with increasing code distance and the additional cost incurred by classical decoding as error rates rise. Future work will refine the energy model to include:
 \begin{itemize}
-    \item \textbf{Classical Processing Energy}: The cost of the MWPM decoding algorithm itself, which scales with the number of errors.
     \item \textbf{Cryogenic Overhead}: Converting dissipated heat at millikelvin temperatures to wall-plug power (typically a factor of 1000x or more).
     \item \textbf{Idle Power}: Static power consumption of qubits and control lines.
 \end{itemize}

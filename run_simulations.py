@@ -71,20 +71,17 @@ def plot_results(results=None):
     plt.savefig('paper/threshold_plot.png')
     plt.close()
 
-    # Plot 2: Energy vs Physical Error Rate (or just sample point)
-    # Energy should be constant per distance regardless of error rate (mostly),
-    # unless we count correction energy (which we don't yet, only circuit energy).
-    # So let's plot Energy vs Distance
-
-    d_vals = sorted(results.keys())
-    energies = [results[d]["energy"][0] for d in d_vals] # Take first p value as energy is constant
-
+    # Plot 2: Energy vs Physical Error Rate
+    # Showing how energy scales with error rate for different distances due to decoding costs
     plt.figure(figsize=(10, 6))
-    plt.plot(d_vals, energies, marker='s', color='red')
-    plt.xlabel('Code Distance (d)')
-    plt.ylabel('Energy per Shot (arbitrary units)')
-    plt.title('Energy Consumption vs Code Distance')
-    plt.grid(True)
+    for d, data in results.items():
+        plt.semilogx(data["p"], data["energy"], marker='s', label=f'd={d}')
+
+    plt.xlabel('Physical Error Rate (p)')
+    plt.ylabel('Average Energy per Shot (units)')
+    plt.title('Energy Consumption vs Physical Error Rate')
+    plt.grid(True, which="both", ls="-")
+    plt.legend()
     plt.savefig('paper/energy_plot.png')
     plt.close()
 
