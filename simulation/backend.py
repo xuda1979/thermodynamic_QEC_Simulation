@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 import stim
+import numpy as np
 from energy.model import EnergyModel
 from decoders.base import Decoder
 
@@ -40,9 +41,9 @@ class QECSimulation:
         # Using the simplified "generate_circuit" which uses built-in stim params
         circuit = self.code.generate_circuit(physical_error_rate=physical_error_rate)
 
-        # 2. Calculate Energy
-        circuit_energy = self.energy_model.calculate_circuit_energy(circuit)
-        total_energy = circuit_energy * shots
+        # 2. Calculate Circuit Energy (Static per shot)
+        circuit_energy_per_shot = self.energy_model.calculate_circuit_energy(circuit)
+        total_circuit_energy = circuit_energy_per_shot * shots
 
         # 3. Compile Sampler
         sampler = circuit.compile_detector_sampler()
@@ -50,12 +51,20 @@ class QECSimulation:
         # 4. Run Simulation
         detection_events, observable_flips = sampler.sample(shots, separate_observables=True)
 
-        # 5. Decode
+        # 5. Calculate Decoding Energy
+        # Count number of defects (True values) in each shot
+        num_defects_per_shot = np.sum(detection_events, axis=1)
+        # Sum of decoding energy for all shots
+        total_decoding_energy = np.sum([self.energy_model.calculate_decoding_energy(n) for n in num_defects_per_shot])
+
+        # Total Energy
+        total_energy = total_circuit_energy + total_decoding_energy
+
+        # 6. Decode
         decoder = decoder_class(circuit)
         predictions = decoder.decode_shots(detection_events)
 
-        # 6. Count Errors
-        import numpy as np
+        # 7. Count Errors
         num_errors = np.sum(np.any(predictions != observable_flips, axis=1))
 
         return SimulationResult(num_errors, shots, total_energy)
